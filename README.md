@@ -1,6 +1,6 @@
 # 🚀 SMOKE STREAM VISUALS 🔥
 **AI Open Mic Music Gallery & Suno Visual Experience**
-*By DJ Smoke Stream & Epic Tech AI*
+*By DJ Smoke Stream & SmokeStream AI*
 
 <div align="center">
 <img src="https://img.shields.io/github/deployments/Sm0k367/smoke-stream-visuals/vercel?label=deployed&style=for-the-badge" />
@@ -12,29 +12,31 @@
 ---
 
 ### 🎧 What is This?
-Turn your entire [Suno](https://suno.com/@dj_smoke_stream) discography into an interactive, jaw-dropping, Three.js-powered gallery.
-**Every track gets a bespoke visualizer. Every visitor gets mind-melted.**
+Turn your entire [Suno](https://suno.com/@dj_smoke_stream) discography into a jaw-dropping, Three.js-powered gallery.
+Every track = bespoke visualizer. Every visitor = mind melted.
 
 ---
 
 🔥 **Live Now:**
-[Main Gallery →](https://suno.com/@dj_smoke_stream)
+[DJ Smoke Stream on Suno →](https://suno.com/@dj_smoke_stream)
 
 ---
 
 ## 🌀 Features
 
 - 🎵 100+ tracks auto-loaded from `playlist.json`
-- 🎹 Each song = unique Three.js visuals & live Suno embed
-- 🚀 Instant Vercel or GitHub deploy (static & SSR)
+- 🎹 Unique Three.js visuals for every song
+- 🚀 One-click Vercel or GitHub deploy
 - ⚡️ Blazing fast, mobile-ready, keyboard-accessible
-- 💾 Batch playlist json: add, remix, scale with a single edit
-- 🤖 Script-friendly: generate/refresh from Suno at any time
+- 💾 Batch-edit playlist: add, remix, scale instantly
+- 🤖 Script-friendly: generate/refresh from Suno (see `suno-playlist-scraper.js`)
 
 ---
 
 ## 🎬 Quick Demo
-> _(insert GIF or image of the site in action here for max bling)_
+
+<!-- Replace this below with your own gallery GIF or screenshot -->
+![smoke stream visual preview](https://media.giphy.com/media/l41lI4bYmcsPJX9Go/giphy.gif)
 
 ---
 
@@ -45,49 +47,42 @@ git clone https://github.com/Sm0k367/smoke-stream-visuals.git
 cd smoke-stream-visuals
 npm install
 npm run dev
-Open localhost:3000 and go wild.
+Open http://localhost:3000 and go wild.
 
-🎸 Project Structure
+🛠 How to Update Songs
+Get your Suno embed codes
+Go to each song, hit "Share > Embed" and copy the ID (after /embed/)
+Edit /public/playlist.json
+Each song: { id, title, genres }
+Script available: node suno-playlist-scraper.js to bulk-load IDs/titles/genres
+🎸 Custom Visuals: Make it Iconic
+Edit /components/Visualizer.js
+
+Unique visuals per song by Suno ID or title
+Drop in new Three.js/GLSL scenes, waveforms, galaxy renders, 3D logos, you name it
+No two tracks look the same—make the gallery yours
+🚀 Deployment
+Vercel: Automatic via GitHub import (Deploy now!)
+GitHub Pages: Use npm run build && next export for static hosting
+⚡️ Project Structure
 CopyCopied!
 /public
-└─ playlist.json # Your songbook for the whole universe
+└─ playlist.json
 /components
-├─ SongSelector.js # Hot dropdown, genre tags, custom vibe
-└─ Visualizer.js # 🚨 Modular, go nuts here with visuals!
+├─ SongSelector.js
+└─ Visualizer.js
 /pages
-├─ _app.js # Style, theme, essence
-└─ index.js # The big show
-suno-playlist-scraper.js # Turn raw Suno list to playlist.json
-🛠 How to Update Songs
-Get your Suno embed links
-Edit /public/playlist.json
-Format: [ { id, title, genres } ]
-Get song IDs via Suno “Share > Embed” (fastest way)
-(Optional): Use the NodeJS script to auto-generate
-bashCopyCopied!
-node suno-playlist-scraper.js
-👾 Custom Visuals—How Wild Will You Get?
-Want a galaxy for one track, a cityscape for another, or waveform particles for your big drop?
-
-Edit /components/Visualizer.js
-Add new blocks for Suno ID/title (see example in the file)
-Plug in shaders, 3D scenes, orbiting text, anything Three.js can dream up.
-🔥 No two songs should ever look the same!
-🚀 Deployment
-Vercel:
-Deploy with Vercel
-GitHub Pages:
-next export magic = fully static visual revolution.
-🤝 Collaborate / Fork / Go Bananas
-Drop a PR for more visuals or more playlist automation.
-Fork and remix. Just keep credit in, and let’s keep Open Mic open.
-Want to automate Suno scraping? Build/PR your scripts!
+├─ _app.js
+└─ index.js
+suno-playlist-scraper.js
+🤝 Collaborate / Remix / Fork
+PR with new visuals, new data scrapers, or totally off-the-wall effects!
+Fork and build your own visual AI open mic.
+Report bugs, or ping @DJ Smoke Stream (Suno or X/Twitter) for collab.
 📣 Future Vision
-🔊 Live AI Open Mic (AI hosts, chat, reactions, auto-montage)
-🌐 Public API for song sharing, collaboration, and remixing
-🚩 Leaderboards for most “visualized” and remixed tracks
-👁️‍🗨️ Event mode—host an open mic with live visuals and crowd voting
-Made for DJ Smoke Stream, by Epic Tech AI
-If you copy our style, at least bring better visuals.
+🔊 Live AI Hosts, open mic events, crowd votes
+👁️‍🗨️ Event mode for parties, raves, creative jams
+🚩 Community remixes, leaderboard, open data API
+Made by DJ Smoke Stream with SmokeStream AI
 
-<div align="center"> <img src="https://media.giphy.com/media/l41lI4bYmcsPJX9Go/giphy.gif" width="180" /><br> <i>Your playlist. Your visuals. Your rules.</i> </div>
+<div align="center"> <img src="https://media.giphy.com/media/l41lI4bYmcsPJX9Go/giphy.gif" width="200" /><br> <i>Your playlist. Your visuals. Your rules.</i> </div> ``` ---
