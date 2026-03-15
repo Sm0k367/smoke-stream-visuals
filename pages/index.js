@@ -3,9 +3,9 @@ import styled from "styled-components";
 import AudioMotionVisualizer from "../components/AudioMotionVisualizer";
 
 const Wrapper = styled.div`
-max-width: 580px;
-margin: 45px auto 25px auto;
-padding: 32px 12px 52px 12px;
+max-width: 600px;
+margin: 45px auto 22px auto;
+padding: 32px 10px 52px 10px;
 background: #15191d;
 border-radius: 19px;
 box-shadow: 0 10px 40px #000b;
@@ -19,7 +19,7 @@ box-shadow: none;
 `;
 
 const Title = styled.h1`
-font-size: 2.11rem;
+font-size: 2.14rem;
 font-weight: 900;
 text-align: center;
 letter-spacing: -1.6px;
@@ -33,21 +33,21 @@ margin: 10px 0 23px 0;
 
 const TrackButton = styled.button`
 display: block;
-font-size: 1.11rem;
+font-size: 1.08rem;
 font-weight: 700;
 width: 100%;
-background: ${(props) => (props.selected ? 'linear-gradient(90deg, #ff6c52 18%, #64ffda 120%)' : '#252a2d')};
-color: ${(props) => (props.selected ? '#19191c' : '#eee')};
+background: ${(props) => (props.selected ? 'linear-gradient(90deg, #ff6c52 25%, #64ffda 130%)' : '#252a2d')};
+color: ${(props) => (props.selected ? '#19191c' : '#fff')};
 border: 2px solid #232336;
 border-radius: 10px;
-padding: 12px 0;
+padding: 13px 0;
 margin-bottom: 10px;
 cursor: pointer;
-box-shadow: ${(props) => (props.selected ? '0 1px 12px #12e6d7b0' : '0 1px 7px #0002')};
+box-shadow: ${(props) => (props.selected ? '0 1px 14px #12e6d7bb' : '0 1px 7px #0001')};
 transition: all 0.14s;
 outline: none;
 &:hover {
-background: linear-gradient(90deg, #ff6c52 30%, #64ffda 140%);
+background: linear-gradient(90deg, #ff6c52 40%, #64ffda 120%);
 color: #18191c;
 border: 2px solid #ff6c52;
 }
@@ -55,12 +55,12 @@ border: 2px solid #ff6c52;
 
 const AudioPlayer = styled.audio`
 width: 100%;
-margin-top: 21px;
-margin-bottom: 9px;
+margin-top: 24px;
+margin-bottom: 12px;
 outline: none;
 background: #181e21;
-border-radius: 10px;
-box-shadow: 0px 2.5px 22px #0002;
+border-radius: 9px;
+box-shadow: 0px 2px 18px #0002;
 `;
 
 const Credits = styled.div`
@@ -72,6 +72,7 @@ color: #a5ffef;
 `;
 
 function fetchAllAudioFiles() {
+// List all your mp3 filenames exactly as shown in /public/
 return [
 "240.mp3", "A Musical Journey (Stereo FX Club Mix).mp3", "A Spiritual Union.mp3", "A_Spiritual_Union.mp3", "Acoustic Techno Fusion.mp3",
 "Ain't That Just the Way.mp3", "All We Hear Is Dirty.mp3", "Big Smoke Stream.mp3", "Blue Money.mp3", "Breathing.mp3",
@@ -119,7 +120,7 @@ selected={selected === name}
 ))}
 </AudioList>
 <AudioPlayer ref={audioRef} controls autoPlay>
-<source src={`/audio/${selected}`} type="audio/mp3" />
+<source src={`/${selected}`} type="audio/mp3" />
 Your browser does not support the audio element.
 </AudioPlayer>
 <AudioMotionVisualizer audioElement={audioRef.current} />
