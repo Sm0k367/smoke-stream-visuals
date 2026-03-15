@@ -1,138 +1,95 @@
-import { useState } from "react";
-import styled from "styled-components";
-import SongSelector from "../components/SongSelector";
-import Visualizer from "../components/Visualizer";
-import playlist from "../public/playlist.json";
-
-const Wrapper = styled.div`
-max-width: 950px;
-margin: 40px auto 0 auto;
-padding: 28px 18px 60px 18px;
-background: rgba(22,22,33,0.95);
-border-radius: 24px;
-box-shadow: 0 10px 32px #000a;
-`;
-
-const Title = styled.h1`
-font-size: 2.5rem;
-font-weight: 900;
-letter-spacing: -2px;
-margin-bottom: 0.2em;
-`;
-
-const Credits = styled.div`
-opacity: 0.7;
-margin-top: 38px;
-text-align: right;
-`;
-
-const ButtonRow = styled.div`
-display: flex;
-gap: 22px;
-margin: 20px 0 14px 0;
-`;
-
-const RandomButton = styled.button`
-font-size: 1.6rem;
-background: linear-gradient(87deg, #64ffda, #22c1c3, #ff6c52 60%);
-color: #181a1f;
-font-weight: 900;
-border: none;
-border-radius: 12px;
-padding: 13px 44px;
-cursor: pointer;
-box-shadow: 0 6px 28px #ff6c5270;
-letter-spacing: 0.5px;
-transition: scale 0.12s;
-&:hover {
-scale: 1.06;
-background: linear-gradient(87deg, #ff6c52, #64ffda, #22c1c3 70%);
-}
-`;
-
-const VISUAL_MODES = [
-"trap-bars",
-"lofi-vhs",
-"disco-particles",
-"turntable",
-"ambient-glow",
-"ambient-disc"
-];
+// pages/index.js
+import { useState, useEffect, useRef } from 'react';
+import Visualizer from '../components/Visualizer';
+import playlist from '../public/playlist.json'; // we'll create this next
 
 export default function Home() {
-const [selected, setSelected] = useState(playlist[0]);
-const [visualMode, setVisualMode] = useState(null);
+  const [currentSong, setCurrentSong] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const audioRef = useRef(null);
 
-// Pick a random song, reset visual mode to auto
-function pickRandomSong() {
-let idx;
-do {
-idx = Math.floor(Math.random() * playlist.length);
-} while (playlist[idx].title === selected.title && playlist.length > 1);
-setSelected(playlist[idx]);
-setVisualMode(null);
-}
+  // Pick the first song by default (safe fallback)
+  useEffect(() => {
+    if (playlist && playlist.length > 0) {
+      setCurrentSong(playlist[0]);
+    }
+  }, []);
 
-// Pick a random visual style that is NOT the current one
-function randomizeVisual() {
-const available = VISUAL_MODES.filter(vm => vm !== visualMode);
-const newMode = available[Math.floor(Math.random() * available.length)];
-setVisualMode(newMode);
-}
+  const startAudio = async (song) => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 1024;
+    }
 
-// Whenever song changes, auto-reset visuals to default for that genre/song
-function handleSelect(song) {
-setSelected(song);
-setVisualMode(null);
-}
+    // For testing: use a real Suno track URL or a local file
+    // In real app you'll want user-triggered play + proper CORS-enabled audio source
+    const audio = new Audio(song.sunoUrl || 'https://example.com/test-audio.mp3'); // ← placeholder
+    audio.crossOrigin = 'anonymous';
+    audioRef.current = audio;
 
-return (
-<Wrapper>
-<Title>
-DJ Smoke Stream – Suno Visual Gallery
-</Title>
-<ButtonRow>
-<RandomButton onClick={pickRandomSong}>Random 🔀</RandomButton>
-<RandomButton onClick={randomizeVisual}>Remix Visuals 🌈</RandomButton>
-</ButtonRow>
-<SongSelector
-songs={playlist}
-selected={selected}
-onSelect={handleSelect}
-/>
-{/* Suno player */}
-{selected.id && (
-<div>
-<iframe
-src={`https://suno.com/embed/${selected.id}`}
-width="760"
-height="240"
-frameBorder="0"
-allow="autoplay; encrypted-media; fullscreen"
-allowFullScreen
-loading="lazy"
-style={{ borderRadius: 12, margin: "20px 0" }}
-title={selected.title}
-/>
-</div>
-)}
-{!selected.id && (
-<div style={{ marginBottom: 24 }}>
-<a
-href={`https://suno.com/song/${encodeURIComponent(selected.title.replace(/\s+/g, "-").toLowerCase())}`}
-target="_blank"
-rel="noopener noreferrer"
-style={{ color: "#64ffda", fontWeight: 700, fontSize: 22 }}
->
-Listen on Suno
-</a>
-</div>
-)}
-<Visualizer song={selected} visualMode={visualMode} />
+    const source = audioContextRef.current.createMediaElementSource(audio);
+    source.connect(analyserRef.current);
+    analyserRef.current.connect(audioContextRef.current.destination);
 
-<Credits>
-Built for <a href="https://suno.com/@dj_smoke_stream">DJ Smoke Stream</a> by <b>SmokeStream AI</b> ⚡️
-</Credits>
-</Wrapper>
-);
+    try {
+      await audioContextRef.current.resume();
+      await audio.play();
+      setIsPlaying(true);
+    } catch (err) {
+      console.error('Audio play failed:', err);
+    }
+  };
+
+  const togglePlay = () => {
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else if (currentSong) {
+      startAudio(currentSong);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-black text-white flex flex-col">
+      {/* Full-screen visualizer background */}
+      <div className="fixed inset-0 z-0">
+        <Visualizer
+          currentSong={currentSong}
+          audioAnalyser={analyserRef.current}
+          isPlaying={isPlaying}
+          className="w-full h-full"
+        />
+      </div>
+
+      {/* Simple overlay UI */}
+      <div className="relative z-10 p-8 flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-5xl font-bold mb-8 text-center drop-shadow-lg">
+          Smoke Stream Nebula
+        </h1>
+
+        {currentSong ? (
+          <>
+            <p className="text-2xl mb-6">{currentSong.title}</p>
+            <p className="text-xl mb-10 opacity-80">by {currentSong.artist || 'DJ Smoke Stream'}</p>
+
+            <button
+              onClick={togglePlay}
+              className="px-10 py-5 bg-purple-600 hover:bg-purple-700 rounded-full text-2xl font-bold transition transform hover:scale-105 shadow-xl"
+            >
+              {isPlaying ? 'PAUSE' : 'PLAY'}
+            </button>
+          </>
+        ) : (
+          <p className="text-2xl">Loading tracks...</p>
+        )}
+
+        <p className="mt-16 text-sm opacity-60">
+          Bass-reactive smoke particles • Next.js + Three.js
+        </p>
+      </div>
+    </div>
+  );
 }
