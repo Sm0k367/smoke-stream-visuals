@@ -1,191 +1,235 @@
 // components/Visualizer.js
-import { useRef, useEffect } from "react";
+"use client";
+
+import { useRef, useMemo, useEffect } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import {
+  OrbitControls,
+  PerspectiveCamera,
+  Effects,
+  Environment,
+} from "@react-three/drei";
 import * as THREE from "three";
-import styled from "styled-components";
+import { EffectComposer, Bloom, GodRays } from "@react-three/postprocessing";
+import { BlendFunction } from "postprocessing";
 
-// Styled wrapper for full responsiveness
-const VisualWrapper = styled.div`
-width: 100%;
-max-width: 850px;
-height: 340px;
-margin: 30px 0;
-border-radius: 14px;
-overflow: hidden;
-background: #181a1f;
-box-shadow: 0 4px 28px #0006;
-`;
+// ────────────────────────────────────────────────
+//   VISUALIZER MAIN COMPONENT
+// ────────────────────────────────────────────────
+export default function Visualizer({
+  currentSong,
+  audioAnalyser,          // Web Audio API AnalyserNode
+  isPlaying = false,
+  className = "",
+}) {
+  if (!currentSong) return null;
 
-// VISUAL MODES for override/randomizer
-const VISUAL_MODES = [
-"trap-bars",
-"lofi-vhs",
-"disco-particles",
-"turntable",
-"ambient-glow",
-"ambient-disc"
-];
+  const theme = currentSong.visualTheme || "default-smoke";
+  const colors = currentSong.colorPalette || ["#ff00aa", "#00ffcc", "#ffff00"];
+  const particleCount = currentSong.particleIntensity || 12000;
 
-// Modular, genre-driven, or explicit override
-function getVisualMode(song, forced) {
-if (forced && VISUAL_MODES.includes(forced)) return forced;
-const genres = (song.genres || []).map(g => g.toLowerCase());
-if (genres.some(g => g.includes('trap'))) return "trap-bars";
-if (genres.some(g => g.includes('lo-fi') || g.includes('lofi'))) return "lofi-vhs";
-if (genres.some(g => g.includes('house') || g.includes('edm'))) return "disco-particles";
-if (genres.some(g => g.includes('hip hop') || g.includes('hip-hop'))) return "turntable";
-if (genres.some(g => g.includes('ambient') || g.includes('experimental'))) return "ambient-glow";
-return "ambient-disc";
+  return (
+    <div className={`w-full h-full ${className}`}>
+      <Canvas
+        gl={{ antialias: true, alpha: false }}
+        camera={{ position: [0, 0, 12], fov: 60 }}
+        onCreated={({ gl }) => {
+          gl.setClearColor(new THREE.Color("#0a0015"), 1);
+          gl.outputColorSpace = THREE.SRGBColorSpace;
+        }}
+      >
+        <ambientLight intensity={0.4} />
+        <pointLight position={[10, 10, 10]} intensity={1.2} color="#ffffff" />
+
+        <PerspectiveCamera makeDefault position={[0, 0, 14]} fov={55} />
+
+        <Scene
+          theme={theme}
+          colors={colors}
+          particleCount={particleCount}
+          audioAnalyser={audioAnalyser}
+          isPlaying={isPlaying}
+        />
+
+        <Environment preset="night" background={false} />
+
+        <OrbitControls
+          enableZoom={false}
+          enablePan={false}
+          autoRotate
+          autoRotateSpeed={0.4}
+          minPolarAngle={Math.PI / 2.2}
+          maxPolarAngle={Math.PI / 1.8}
+        />
+
+        <PostProcessing />
+      </Canvas>
+    </div>
+  );
 }
 
-export default function Visualizer({ song, visualMode }) {
-const mountRef = useRef();
-const freqArray = useRef(new Array(32).fill(0));
+// ────────────────────────────────────────────────
+//   POST-PROCESSING (bloom + godrays feel)
+// ────────────────────────────────────────────────
+function PostProcessing() {
+  const sunPosition = useMemo(() => new THREE.Vector3(5, 8, -10), []);
 
-useEffect(() => {
-if (mountRef.current) mountRef.current.innerHTML = "";
-const mode = getVisualMode(song, visualMode);
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color("#181a1f");
-const camera = new THREE.PerspectiveCamera(60, 850 / 340, 0.1, 1000);
-camera.position.z = 2.7;
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(850, 340);
-mountRef.current.appendChild(renderer.domElement);
-
-let cleanup = () => {}, animId = 0;
-
-if (mode === "trap-bars") {
-// BASS BAR FFT Visual
-const N_BARS = 32, bars = [], group = new THREE.Group();
-for (let i = 0; i < N_BARS; ++i) {
-const geo = new THREE.CylinderGeometry(0.08, 0.1, 1, 12);
-const mat = new THREE.MeshStandardMaterial({ color: "#64ffda" });
-const bar = new THREE.Mesh(geo, mat);
-bar.position.x = (i - N_BARS/2) * 0.19;
-bar.position.y = -0.4;
-group.add(bar);
-bars.push(bar);
+  return (
+    <EffectComposer>
+      <Bloom
+        luminanceThreshold={0.8}
+        luminanceSmoothing={0.9}
+        height={480}
+        intensity={1.4}
+      />
+      {/* Optional godrays – feels very cinematic with smoke */}
+      <GodRays
+        sunPosition={sunPosition}
+        blendFunction={BlendFunction.Screen}
+        samples={40}
+        density={0.9}
+        decay={0.92}
+        weight={0.4}
+        exposure={0.6}
+        clampMax={1.2}
+      />
+    </EffectComposer>
+  );
 }
-scene.add(group);
-scene.add(new THREE.HemisphereLight("#64ffda", "#181a1f", 1.12));
-let frame = 0;
-const animate = () => {
-frame++;
-bars.forEach((bar, i) => {
-let mag = (freqArray.current[i] || 0)/128 + 0.7 + 0.2 * Math.sin(frame*0.09 + i*0.33);
-bar.scale.y = mag;
-bar.material.color = new THREE.Color(`hsl(${(150 + i*9 + frame)%360},90%,62%)`);
-});
-renderer.render(scene, camera);
-animId = requestAnimationFrame(animate);
-};
-animate(); cleanup = () => cancelAnimationFrame(animId);
-} else if (mode === "lofi-vhs") {
-// Retro floating rectangle with VHS shaders
-const geo = new THREE.BoxGeometry(1.44, 0.44, 0.17);
-const mat = new THREE.MeshStandardMaterial({ color: "#c0b497", metalness: 0.78, roughness: 0.7 });
-const tape = new THREE.Mesh(geo, mat);
-tape.position.z = 0.2;
-scene.add(tape);
-scene.add(new THREE.DirectionalLight("#64ffda", 2));
-let frame = 0;
-const animate = () => {
-frame++;
-tape.rotation.y = Math.sin(frame*0.015) * 0.23;
-tape.rotation.x = Math.cos(frame*0.009) * 0.15 + Math.sin(frame*0.025) * 0.03;
-let flicker = 0.95 + 0.07 * Math.abs(Math.sin(frame * 0.23));
-tape.material.emissiveIntensity = flicker;
-renderer.render(scene, camera);
-animId = requestAnimationFrame(animate);
-};
-animate(); cleanup = () => cancelAnimationFrame(animId);
-} else if (mode === "disco-particles") {
-// House/EDM: floating particles in a disco swirl
-let particles = [];
-const geometry = new THREE.SphereGeometry(0.030, 4, 4);
-for (let i = 0; i < 64; ++i) {
-const material = new THREE.MeshStandardMaterial({ color: `hsl(${i*6}, 85%, 57%)`});
-const mesh = new THREE.Mesh(geometry, material);
-let angle = (i / 64) * Math.PI * 2, radius = 0.85 + (i % 5) * 0.13;
-mesh.position.x = Math.cos(angle) * radius;
-mesh.position.y = Math.sin(angle) * radius;
-mesh.position.z = (Math.cos(i * 4.2) * 0.3);
-particles.push(mesh); scene.add(mesh);
-}
-scene.add(new THREE.HemisphereLight("#fff", "#64ffda", 2.2));
-let frame = 0;
-const animate = () => {
-frame++;
-particles.forEach((p, i) => {
-let angle = (i / 64)*Math.PI*2 + frame*0.005*(1 + (freqArray.current[i%32]||0)/200);
-let radius = 1.05 + 0.06*Math.sin(frame*0.02 + i*0.25);
-p.position.x = Math.cos(angle) * radius;
-p.position.y = Math.sin(angle) * radius;
-p.material.color = new THREE.Color(`hsl(${(i*10+frame)%360},88%,62%)`);
-});
-renderer.render(scene, camera);
-animId = requestAnimationFrame(animate);
-};
-animate(); cleanup = () => cancelAnimationFrame(animId);
-} else if (mode === "ambient-glow") {
-// Ambient/Experimental: Glowing disc
-const discGeom = new THREE.TorusGeometry(0.76, 0.19, 24, 48);
-const discMat = new THREE.MeshStandardMaterial({
-color: "#64ffda",
-emissive: "#163a2c",
-roughness: 0.21,
-metalness: 0.98
-});
-const disc = new THREE.Mesh(discGeom, discMat);
-disc.rotation.x = Math.PI / 2.22;
-scene.add(disc);
-scene.add(new THREE.PointLight("#64ffda", 1.21, 100));
-let frame = 0;
-const animate = () => {
-frame++;
-disc.rotation.z = frame * 0.021 + Math.sin(frame*0.002)/2;
-disc.material.emissiveIntensity = 0.25 + 0.14*Math.sin(frame*0.016);
-renderer.render(scene, camera);
-animId = requestAnimationFrame(animate);
-};
-animate(); cleanup = () => cancelAnimationFrame(animId);
-} else if (mode === "turntable") {
-// Hip-hop: spinning turntable with headshell "arm"
-const disc = new THREE.Mesh(new THREE.CylinderGeometry(1.19,1.19,0.19,50), new THREE.MeshStandardMaterial({color:"#303837",metalness:1,roughness:0.73}));
-disc.rotation.x = Math.PI/2;
-scene.add(disc);
-const label = new THREE.Mesh(new THREE.CircleGeometry(0.31, 25), new THREE.MeshStandardMaterial({color: "#64ffda"}));
-label.position.z = 0.12; scene.add(label);
-const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,1.0), new THREE.MeshStandardMaterial({color:"#ff6c52"})); arm.position.x = -0.7; arm.position.y = 0.7; arm.rotation.z = 0.34;
-scene.add(arm); scene.add(new THREE.PointLight("#fff", 1.13, 6));
-let frame = 0; const animate = () => { frame++; disc.rotation.z +=0.02 + Math.sin(frame*0.03)*0.001; renderer.render(scene, camera); animId=requestAnimationFrame(animate)};
-animate(); cleanup = () => cancelAnimationFrame(animId);
-} else {
-// Default: glowing disc
-const discGeom = new THREE.TorusGeometry(0.76, 0.19, 24, 48);
-const discMat = new THREE.MeshStandardMaterial({
-color: "#64ffda",
-emissive: "#131d1a",
-roughness: 0.19,
-metalness: 0.92
-});
-const disc = new THREE.Mesh(discGeom, discMat);
-disc.rotation.x = Math.PI / 2.15;
-scene.add(disc); scene.add(new THREE.PointLight("#64ffda", 1.2, 100));
-let frame = 0; const animate = () => { frame++; disc.rotation.z = frame * 0.013; disc.material.emissiveIntensity = 0.33 + 0.1 * Math.sin(frame * 0.045); renderer.render(scene, camera); animId=requestAnimationFrame(animate)};
-animate(); cleanup = () => cancelAnimationFrame(animId);
-}
-return () => {
-cleanup();
-if (mountRef.current?.firstChild) mountRef.current.removeChild(renderer.domElement);
-renderer.dispose();
-};
-}, [song.id, JSON.stringify(song.genres), visualMode]);
 
-return (
-<VisualWrapper>
-<div ref={mountRef} style={{ width: "100%", height: "100%" }} />
-</VisualWrapper>
-);
+// ────────────────────────────────────────────────
+//   MAIN 3D SCENE – per-song themes
+// ────────────────────────────────────────────────
+function Scene({ theme, colors, particleCount, audioAnalyser, isPlaying }) {
+  const { scene } = useThree();
+  const pointsRef = useRef();
+  const groupRef = useRef();
+
+  // FFT data buffer
+  const freqData = useRef(new Uint8Array(512));
+
+  // Smoke / particle field
+  const particles = useMemo(() => {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const velocities = new Float32Array(particleCount * 3);
+    const sizes = new Float32Array(particleCount);
+    const colorArray = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount; i++) {
+      const i3 = i * 3;
+      positions[i3]     = (Math.random() - 0.5) * 24;
+      positions[i3 + 1] = (Math.random() - 0.5) * 24;
+      positions[i3 + 2] = (Math.random() - 0.5) * 24;
+
+      velocities[i3]     = (Math.random() - 0.5) * 0.04;
+      velocities[i3 + 1] = (Math.random() - 0.5) * 0.04 + 0.01; // light upward drift
+      velocities[i3 + 2] = (Math.random() - 0.5) * 0.04;
+
+      sizes[i] = Math.random() * 1.8 + 0.6;
+
+      const c = new THREE.Color(colors[i % colors.length]);
+      colorArray[i3]     = c.r;
+      colorArray[i3 + 1] = c.g;
+      colorArray[i3 + 2] = c.b;
+    }
+
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("velocity", new THREE.BufferAttribute(velocities, 3));
+    geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+    geometry.setAttribute("color", new THREE.BufferAttribute(colorArray, 3));
+
+    return geometry;
+  }, [particleCount, colors]);
+
+  const material = useMemo(
+    () =>
+      new THREE.PointsMaterial({
+        size: 0.14,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.72,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        sizeAttenuation: true,
+      }),
+    []
+  );
+
+  // ─── Audio reactivity update ────────────────────────
+  useFrame((state, delta) => {
+    if (!audioAnalyser || !isPlaying) return;
+
+    audioAnalyser.getByteFrequencyData(freqData.current);
+
+    const bass = freqData.current.slice(0, 8).reduce((a, b) => a + b, 0) / (8 * 255);
+    const mid  = freqData.current.slice(20, 60).reduce((a, b) => a + b, 0) / (40 * 255);
+    const high = freqData.current.slice(120, 200).reduce((a, b) => a + b, 0) / (80 * 255);
+
+    if (pointsRef.current) {
+      pointsRef.current.rotation.y += 0.002 + bass * 0.03;
+      pointsRef.current.rotation.x += 0.001 + mid * 0.015;
+
+      pointsRef.current.scale.setScalar(1 + bass * 1.4 + mid * 0.4);
+
+      // Push particles outward on bass
+      const positions = pointsRef.current.geometry.attributes.position.array;
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        const vel = pointsRef.current.geometry.attributes.velocity.array;
+        positions[i3]     += vel[i3]     * (1 + bass * 6);
+        positions[i3 + 1] += vel[i3 + 1] * (1 + bass * 4);
+        positions[i3 + 2] += vel[i3 + 2] * (1 + bass * 5);
+      }
+      pointsRef.current.geometry.attributes.position.needsUpdate = true;
+    }
+
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * (0.08 + high * 0.4);
+    }
+  });
+
+  // Theme variations (expandable)
+  let extraElements = null;
+
+  if (theme.includes("lowrider") || theme.includes("hyphy")) {
+    extraElements = (
+      <>
+        <mesh position={[0, -4, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[40, 40]} />
+          <meshStandardMaterial color="#110022" emissive="#220044" emissiveIntensity={0.3} />
+        </mesh>
+        {/* Neon underglow simulation */}
+        <pointLight position={[0, -3.5, 0]} color="#ff00cc" intensity={4} distance={12} />
+      </>
+    );
+  }
+
+  if (theme.includes("glitch") || theme.includes("digital")) {
+    extraElements = (
+      <group ref={groupRef}>
+        <mesh>
+          <icosahedronGeometry args={[3.2, 2]} />
+          <meshBasicMaterial color="#00ffff" wireframe wireframeLinewidth={2} transparent opacity={0.5} />
+        </mesh>
+      </group>
+    );
+  }
+
+  return (
+    <>
+      <points ref={pointsRef} geometry={particles} material={material} />
+
+      {/* Fog / volumetric haze */}
+      <fog attach="fog" args={["#0a0015", 8, 24]} />
+
+      {extraElements}
+
+      {/* Central glow orb – reacts to mids */}
+      <mesh>
+        <sphereGeometry args={[1.4 + mid * 0.8, 32, 32]} />
+        <meshBasicMaterial color={colors[1]} transparent opacity={0.6} blending={THREE.AdditiveBlending} />
+      </mesh>
+    </>
+  );
 }
