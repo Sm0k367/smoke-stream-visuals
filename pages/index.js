@@ -1,4 +1,3 @@
-// pages/index.js
 import { useState } from "react";
 import styled from "styled-components";
 import SongSelector from "../components/SongSelector";
@@ -27,6 +26,12 @@ margin-top: 38px;
 text-align: right;
 `;
 
+const ButtonRow = styled.div`
+display: flex;
+gap: 22px;
+margin: 20px 0 14px 0;
+`;
+
 const RandomButton = styled.button`
 font-size: 1.6rem;
 background: linear-gradient(87deg, #64ffda, #22c1c3, #ff6c52 60%);
@@ -35,7 +40,6 @@ font-weight: 900;
 border: none;
 border-radius: 12px;
 padding: 13px 44px;
-margin: 22px 0;
 cursor: pointer;
 box-shadow: 0 6px 28px #ff6c5270;
 letter-spacing: 0.5px;
@@ -46,16 +50,40 @@ background: linear-gradient(87deg, #ff6c52, #64ffda, #22c1c3 70%);
 }
 `;
 
+const VISUAL_MODES = [
+"trap-bars",
+"lofi-vhs",
+"disco-particles",
+"turntable",
+"ambient-glow",
+"ambient-disc"
+];
+
 export default function Home() {
 const [selected, setSelected] = useState(playlist[0]);
+const [visualMode, setVisualMode] = useState(null);
 
-// Pick a truly random index
+// Pick a random song, reset visual mode to auto
 function pickRandomSong() {
 let idx;
 do {
 idx = Math.floor(Math.random() * playlist.length);
 } while (playlist[idx].title === selected.title && playlist.length > 1);
 setSelected(playlist[idx]);
+setVisualMode(null);
+}
+
+// Pick a random visual style that is NOT the current one
+function randomizeVisual() {
+const available = VISUAL_MODES.filter(vm => vm !== visualMode);
+const newMode = available[Math.floor(Math.random() * available.length)];
+setVisualMode(newMode);
+}
+
+// Whenever song changes, auto-reset visuals to default for that genre/song
+function handleSelect(song) {
+setSelected(song);
+setVisualMode(null);
 }
 
 return (
@@ -63,11 +91,14 @@ return (
 <Title>
 DJ Smoke Stream – Suno Visual Gallery
 </Title>
+<ButtonRow>
 <RandomButton onClick={pickRandomSong}>Random 🔀</RandomButton>
+<RandomButton onClick={randomizeVisual}>Remix Visuals 🌈</RandomButton>
+</ButtonRow>
 <SongSelector
 songs={playlist}
 selected={selected}
-onSelect={setSelected}
+onSelect={handleSelect}
 />
 {/* Suno player */}
 {selected.id && (
@@ -97,7 +128,7 @@ Listen on Suno
 </a>
 </div>
 )}
-<Visualizer song={selected} />
+<Visualizer song={selected} visualMode={visualMode} />
 
 <Credits>
 Built for <a href="https://suno.com/@dj_smoke_stream">DJ Smoke Stream</a> by <b>SmokeStream AI</b> ⚡️
