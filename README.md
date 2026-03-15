@@ -1,6 +1,6 @@
 # 🚀 SMOKE STREAM VISUALS 🔥
 **AI Open Mic Music Gallery & Suno Visual Experience**
-*By DJ Smoke Stream & SmokeStream AI*
+*By DJ Smoke Stream & Epic Tech AI*
 
 <div align="center">
 <img src="https://img.shields.io/github/deployments/Sm0k367/smoke-stream-visuals/vercel?label=deployed&style=for-the-badge" />
@@ -87,7 +87,7 @@ Want to automate Suno scraping? Build/PR your scripts!
 🌐 Public API for song sharing, collaboration, and remixing
 🚩 Leaderboards for most “visualized” and remixed tracks
 👁️‍🗨️ Event mode—host an open mic with live visuals and crowd voting
-Made for DJ Smoke Stream, by SmokeStream AI
+Made for DJ Smoke Stream, by Epic Tech AI
 If you copy our style, at least bring better visuals.
 
 <div align="center"> <img src="https://media.giphy.com/media/l41lI4bYmcsPJX9Go/giphy.gif" width="180" /><br> <i>Your playlist. Your visuals. Your rules.</i> </div> ```
