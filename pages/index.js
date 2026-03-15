@@ -4,7 +4,7 @@ import styled from "styled-components";
 import SongSelector from "../components/SongSelector";
 import Visualizer from "../components/Visualizer";
 
-// Load the playlist (swap for data fetch later if you want)
+// Import playlist (may need to use require in some environments)
 import playlist from "../public/playlist.json";
 
 const Wrapper = styled.div`
@@ -13,7 +13,7 @@ margin: 40px auto 0 auto;
 padding: 28px 18px 60px 18px;
 background: rgba(22,22,33,0.95);
 border-radius: 24px;
-box-shadow: 0 10px 32px #000a ;
+box-shadow: 0 10px 32px #000a;
 `;
 
 const Title = styled.h1`
@@ -42,22 +42,37 @@ songs={playlist}
 selected={selected}
 onSelect={setSelected}
 />
-{/* Suno Player Embed */}
+
+{/* Suno player (iframe only, NO children inside iframe!) */}
+{selected.id && (
 <div>
 <iframe
 src={`https://suno.com/embed/${selected.id}`}
-width="100%"
+width="760"
 height="240"
 frameBorder="0"
 allow="autoplay; encrypted-media; fullscreen"
 allowFullScreen
 loading="lazy"
 style={{ borderRadius: 12, margin: "20px 0" }}
->
-<a href={`https://suno.com/song/${selected.id}`}>Listen on Suno</a>
-</iframe>
+title={selected.title}
+/>
 </div>
-{/* Modular Three.js Visualizer */}
+)}
+{/* Fallback: direct Suno page link if no embed available */}
+{!selected.id && (
+<div style={{ marginBottom: 24 }}>
+<a
+href={`https://suno.com/song/${encodeURIComponent(selected.title.replace(/\s+/g, "-").toLowerCase())}`}
+target="_blank"
+rel="noopener noreferrer"
+style={{ color: "#64ffda", fontWeight: 700, fontSize: 22 }}
+>
+Listen on Suno
+</a>
+</div>
+)}
+{/* 3D/FFT/Custom Visualizer */}
 <Visualizer song={selected} />
 
 <Credits>
