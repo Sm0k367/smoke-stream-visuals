@@ -127,8 +127,17 @@ songs={playlist}
 selected={selected}
 onSelect={handleSelect}
 />
-{selected.id && (
-<div style={{ width: "100%" }}>
+
+{/* PRIORITY: mp3 player if audio present */}
+{selected.audio ? (
+<audio
+src={selected.audio}
+controls
+autoPlay
+style={{ width: "100%", marginTop: 12, marginBottom: 18 }}
+/>
+) : selected.id ? (
+<div>
 <ResponsiveIframe
 src={`https://suno.com/embed/${selected.id}`}
 frameBorder="0"
@@ -138,8 +147,7 @@ loading="lazy"
 title={selected.title}
 />
 </div>
-)}
-{!selected.id && (
+) : (
 <div style={{ marginBottom: 18, textAlign: "center" }}>
 <a
 href={`https://suno.com/song/${encodeURIComponent(selected.title.replace(/\s+/g, "-").toLowerCase())}`}
@@ -151,6 +159,7 @@ Listen on Suno
 </a>
 </div>
 )}
+
 <Visualizer song={selected} visualMode={visualMode} />
 <Credits>
 Built for <a href="https://epic-tech-ai-lounge.vercel.app/">Epic Tech AI</a> by <b>SmokeStream AI</b> ⚡️
