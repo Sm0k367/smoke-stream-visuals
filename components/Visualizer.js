@@ -1,10 +1,10 @@
 // components/Visualizer.js
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect } from "react";
 import * as THREE from "three";
 import styled from "styled-components";
 import AudioAnalyzer from "./AudioAnalyzer";
 
-// Responsive wrapper (tweak as desired)
+// Styled wrapper for full responsiveness
 const VisualWrapper = styled.div`
 width: 100%;
 max-width: 850px;
@@ -16,38 +16,43 @@ background: #181a1f;
 box-shadow: 0 4px 28px #0006;
 `;
 
-// Example: local audio file support (use song.audio for .mp3 if available)
-function useSongAudio(song) {
-// For now use null—later, you can add mp3 url per song in playlist.json!
-return null;
+// MODULAR VISUAL CONFIG per genre
+function getVisualMode(song) {
+const genres = (song.genres || []).map(g => g.toLowerCase());
+if (genres.some(g => g.includes('trap'))) return "trap-bars";
+if (genres.some(g => g.includes('lo-fi') || g.includes('lofi'))) return "lofi-vhs";
+if (genres.some(g => g.includes('house') || g.includes('edm'))) return "disco-particles";
+if (genres.some(g => g.includes('hip hop') || g.includes('hip-hop'))) return "turntable";
+if (genres.some(g => g.includes('ambient') || g.includes('experimental'))) return "ambient-glow";
+// Default: clean disc
+return "ambient-disc";
 }
 
 export default function Visualizer({ song, playing = false }) {
 const mountRef = useRef();
-const [freqArray, setFreqArray] = useState(new Array(32).fill(0));
-const [audioEl, setAudioEl] = useState(null);
+const freqArray = useRef(new Array(32).fill(0));
 
-// Wire up direct audio if available
-const audioSrc = useSongAudio(song);
+// Allow mp3 reactivity (if present)
+const audioEl = null;
+const audioSrc = song.audio || null;
 
 useEffect(() => {
-// reset
-setFreqArray(new Array(32).fill(0));
 if (mountRef.current) mountRef.current.innerHTML = "";
+const mode = getVisualMode(song);
 
-// Three.js setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#181a1f");
 const camera = new THREE.PerspectiveCamera(60, 850 / 340, 0.1, 1000);
-camera.position.z = 2.6;
+camera.position.z = 2.7;
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(850, 340);
 mountRef.current.appendChild(renderer.domElement);
 
-// Bars visual: truly reactive to freqArray!
-const N_BARS = 32;
-const bars = [];
-const group = new THREE.Group();
+let cleanup = () => {}, animId = 0;
+
+if (mode === "trap-bars") {
+// BASS BAR FFT Visual
+const N_BARS = 32, bars = [], group = new THREE.Group();
 for (let i = 0; i < N_BARS; ++i) {
 const geo = new THREE.CylinderGeometry(0.08, 0.1, 1, 12);
 const mat = new THREE.MeshStandardMaterial({ color: "#64ffda" });
@@ -58,48 +63,127 @@ group.add(bar);
 bars.push(bar);
 }
 scene.add(group);
-scene.add(new THREE.HemisphereLight("#64ffda", "#181a1f", 1.14));
-
-let frame = 0, anim;
+scene.add(new THREE.HemisphereLight("#64ffda", "#181a1f", 1.12));
+let frame = 0;
 const animate = () => {
 frame++;
 bars.forEach((bar, i) => {
-// Map freq amp into bar scale, add a little bounce regardless
-let mag = (freqArray[i] || 0)/128 + 0.7 + 0.2 * Math.sin(frame*0.07 + i*0.2);
+let mag = (freqArray.current[i] || 0)/128 + 0.7 + 0.2 * Math.sin(frame*0.09 + i*0.33);
 bar.scale.y = mag;
-bar.material.color = new THREE.Color(`hsl(${(100 + i*8 + frame*0.8)%360},90%,62%)`);
+bar.material.color = new THREE.Color(`hsl(${(150 + i*9 + frame)%360},90%,62%)`);
 });
 renderer.render(scene, camera);
-anim = requestAnimationFrame(animate);
+animId = requestAnimationFrame(animate);
 };
-animate();
-
+animate(); cleanup = () => cancelAnimationFrame(animId);
+} else if (mode === "lofi-vhs") {
+// Retro floating rectangle with VHS shaders
+const geo = new THREE.BoxGeometry(1.44, 0.44, 0.17);
+const mat = new THREE.MeshStandardMaterial({ color: "#c0b497", metalness: 0.78, roughness: 0.7 });
+const tape = new THREE.Mesh(geo, mat);
+tape.position.z = 0.2;
+scene.add(tape);
+scene.add(new THREE.DirectionalLight("#64ffda", 2));
+let frame = 0;
+const animate = () => {
+frame++;
+tape.rotation.y = Math.sin(frame*0.015) * 0.23;
+tape.rotation.x = Math.cos(frame*0.009) * 0.15 + Math.sin(frame*0.025) * 0.03;
+let flicker = 0.95 + 0.07 * Math.abs(Math.sin(frame * 0.23));
+tape.material.emissiveIntensity = flicker;
+renderer.render(scene, camera);
+animId = requestAnimationFrame(animate);
+};
+animate(); cleanup = () => cancelAnimationFrame(animId);
+} else if (mode === "disco-particles") {
+// House/EDM: floating particles in a disco swirl
+let particles = [];
+const geometry = new THREE.SphereGeometry(0.030, 4, 4);
+for (let i = 0; i < 64; ++i) {
+const material = new THREE.MeshStandardMaterial({ color: `hsl(${i*6}, 85%, 57%)`});
+const mesh = new THREE.Mesh(geometry, material);
+let angle = (i / 64) * Math.PI * 2, radius = 0.85 + (i % 5) * 0.13;
+mesh.position.x = Math.cos(angle) * radius;
+mesh.position.y = Math.sin(angle) * radius;
+mesh.position.z = (Math.cos(i * 4.2) * 0.3);
+particles.push(mesh); scene.add(mesh);
+}
+scene.add(new THREE.HemisphereLight("#fff", "#64ffda", 2.2));
+let frame = 0;
+const animate = () => {
+frame++;
+particles.forEach((p, i) => {
+let angle = (i / 64)*Math.PI*2 + frame*0.005*(1 + (freqArray.current[i%32]||0)/200);
+let radius = 1.05 + 0.06*Math.sin(frame*0.02 + i*0.25);
+p.position.x = Math.cos(angle) * radius;
+p.position.y = Math.sin(angle) * radius;
+p.material.color = new THREE.Color(`hsl(${(i*10+frame)%360},88%,62%)`);
+});
+renderer.render(scene, camera);
+animId = requestAnimationFrame(animate);
+};
+animate(); cleanup = () => cancelAnimationFrame(animId);
+} else if (mode === "ambient-glow") {
+// Ambient/Experimental: Glowing disc
+const discGeom = new THREE.TorusGeometry(0.76, 0.19, 24, 48);
+const discMat = new THREE.MeshStandardMaterial({
+color: "#64ffda",
+emissive: "#163a2c",
+roughness: 0.21,
+metalness: 0.98
+});
+const disc = new THREE.Mesh(discGeom, discMat);
+disc.rotation.x = Math.PI / 2.22;
+scene.add(disc);
+scene.add(new THREE.PointLight("#64ffda", 1.21, 100));
+let frame = 0;
+const animate = () => {
+frame++;
+disc.rotation.z = frame * 0.021 + Math.sin(frame*0.002)/2;
+disc.material.emissiveIntensity = 0.25 + 0.14*Math.sin(frame*0.016);
+renderer.render(scene, camera);
+animId = requestAnimationFrame(animate);
+};
+animate(); cleanup = () => cancelAnimationFrame(animId);
+} else if (mode === "turntable") {
+// Hip-hop: spinning turntable with headshell "arm"
+const disc = new THREE.Mesh(new THREE.CylinderGeometry(1.19,1.19,0.19,50), new THREE.MeshStandardMaterial({color:"#303837",metalness:1,roughness:0.73}));
+disc.rotation.x = Math.PI/2;
+scene.add(disc);
+const label = new THREE.Mesh(new THREE.CircleGeometry(0.31, 25), new THREE.MeshStandardMaterial({color: "#64ffda"}));
+label.position.z = 0.12; scene.add(label);
+const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,1.0), new THREE.MeshStandardMaterial({color:"#ff6c52"})); arm.position.x = -0.7; arm.position.y = 0.7; arm.rotation.z = 0.34;
+scene.add(arm); scene.add(new THREE.PointLight("#fff", 1.13, 6));
+let frame = 0; const animate = () => { frame++; disc.rotation.z +=0.02 + Math.sin(frame*0.03)*0.001; renderer.render(scene, camera); animId=requestAnimationFrame(animate)};
+animate(); cleanup = () => cancelAnimationFrame(animId);
+} else {
+// Default: glowing disc
+const discGeom = new THREE.TorusGeometry(0.76, 0.19, 24, 48);
+const discMat = new THREE.MeshStandardMaterial({
+color: "#64ffda",
+emissive: "#131d1a",
+roughness: 0.19,
+metalness: 0.92
+});
+const disc = new THREE.Mesh(discGeom, discMat);
+disc.rotation.x = Math.PI / 2.15;
+scene.add(disc); scene.add(new THREE.PointLight("#64ffda", 1.2, 100));
+let frame = 0; const animate = () => { frame++; disc.rotation.z = frame * 0.013; disc.material.emissiveIntensity = 0.33 + 0.1 * Math.sin(frame * 0.045); renderer.render(scene, camera); animId=requestAnimationFrame(animate)};
+animate(); cleanup = () => cancelAnimationFrame(animId);
+}
 return () => {
-cancelAnimationFrame(anim);
+cleanup();
 if (mountRef.current?.firstChild) mountRef.current.removeChild(renderer.domElement);
 renderer.dispose();
 };
-}, [song.id]); // rerun on song change
+}, [song.id, JSON.stringify(song.genres)]);
 
-// Provide audio for reactivity if possible
-useEffect(() => {
-if (!audioSrc) return;
-const el = document.createElement("audio");
-el.src = audioSrc;
-setAudioEl(el);
-}, [audioSrc]);
+// Plug in reactivity: replace freqArray if mp3 is available
+// Support audio source in the future...
 
 return (
 <VisualWrapper>
 <div ref={mountRef} style={{ width: "100%", height: "100%" }} />
-{/* Only needed if you want visible native player for .mp3s/demo */}
-{audioSrc && (
-<audio src={audioSrc} controls autoPlay={playing} style={{ marginTop: 10 }} />
-)}
-{/* Hidden analyzer—runs anytime audio is available */}
-{audioEl && (
-<AudioAnalyzer audio={audioEl} onFrame={arr => setFreqArray(arr.slice(0, 32))} fftSize={64} />
-)}
 </VisualWrapper>
 );
 }
