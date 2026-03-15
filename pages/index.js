@@ -3,8 +3,6 @@ import { useState } from "react";
 import styled from "styled-components";
 import SongSelector from "../components/SongSelector";
 import Visualizer from "../components/Visualizer";
-
-// Import playlist (may need to use require in some environments)
 import playlist from "../public/playlist.json";
 
 const Wrapper = styled.div`
@@ -29,21 +27,49 @@ margin-top: 38px;
 text-align: right;
 `;
 
+const RandomButton = styled.button`
+font-size: 1.6rem;
+background: linear-gradient(87deg, #64ffda, #22c1c3, #ff6c52 60%);
+color: #181a1f;
+font-weight: 900;
+border: none;
+border-radius: 12px;
+padding: 13px 44px;
+margin: 22px 0;
+cursor: pointer;
+box-shadow: 0 6px 28px #ff6c5270;
+letter-spacing: 0.5px;
+transition: scale 0.12s;
+&:hover {
+scale: 1.06;
+background: linear-gradient(87deg, #ff6c52, #64ffda, #22c1c3 70%);
+}
+`;
+
 export default function Home() {
 const [selected, setSelected] = useState(playlist[0]);
+
+// Pick a truly random index
+function pickRandomSong() {
+let idx;
+do {
+idx = Math.floor(Math.random() * playlist.length);
+} while (playlist[idx].title === selected.title && playlist.length > 1);
+setSelected(playlist[idx]);
+}
 
 return (
 <Wrapper>
 <Title>
 DJ Smoke Stream – Suno Visual Gallery
 </Title>
+<RandomButton onClick={pickRandomSong}>Random 🔀</RandomButton>
 <SongSelector
 songs={playlist}
 selected={selected}
 onSelect={setSelected}
 />
-
-{/* Suno player (iframe only, NO children inside iframe!) */}
+{/* Suno player */}
 {selected.id && (
 <div>
 <iframe
@@ -59,7 +85,6 @@ title={selected.title}
 />
 </div>
 )}
-{/* Fallback: direct Suno page link if no embed available */}
 {!selected.id && (
 <div style={{ marginBottom: 24 }}>
 <a
@@ -72,7 +97,6 @@ Listen on Suno
 </a>
 </div>
 )}
-{/* 3D/FFT/Custom Visualizer */}
 <Visualizer song={selected} />
 
 <Credits>
