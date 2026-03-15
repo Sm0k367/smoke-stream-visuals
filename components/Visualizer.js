@@ -2,7 +2,6 @@
 import { useRef, useEffect } from "react";
 import * as THREE from "three";
 import styled from "styled-components";
-import AudioAnalyzer from "./AudioAnalyzer";
 
 // Styled wrapper for full responsiveness
 const VisualWrapper = styled.div`
@@ -16,29 +15,35 @@ background: #181a1f;
 box-shadow: 0 4px 28px #0006;
 `;
 
-// MODULAR VISUAL CONFIG per genre
-function getVisualMode(song) {
+// VISUAL MODES for override/randomizer
+const VISUAL_MODES = [
+"trap-bars",
+"lofi-vhs",
+"disco-particles",
+"turntable",
+"ambient-glow",
+"ambient-disc"
+];
+
+// Modular, genre-driven, or explicit override
+function getVisualMode(song, forced) {
+if (forced && VISUAL_MODES.includes(forced)) return forced;
 const genres = (song.genres || []).map(g => g.toLowerCase());
 if (genres.some(g => g.includes('trap'))) return "trap-bars";
 if (genres.some(g => g.includes('lo-fi') || g.includes('lofi'))) return "lofi-vhs";
 if (genres.some(g => g.includes('house') || g.includes('edm'))) return "disco-particles";
 if (genres.some(g => g.includes('hip hop') || g.includes('hip-hop'))) return "turntable";
 if (genres.some(g => g.includes('ambient') || g.includes('experimental'))) return "ambient-glow";
-// Default: clean disc
 return "ambient-disc";
 }
 
-export default function Visualizer({ song, playing = false }) {
+export default function Visualizer({ song, visualMode }) {
 const mountRef = useRef();
 const freqArray = useRef(new Array(32).fill(0));
 
-// Allow mp3 reactivity (if present)
-const audioEl = null;
-const audioSrc = song.audio || null;
-
 useEffect(() => {
 if (mountRef.current) mountRef.current.innerHTML = "";
-const mode = getVisualMode(song);
+const mode = getVisualMode(song, visualMode);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#181a1f");
@@ -176,10 +181,7 @@ cleanup();
 if (mountRef.current?.firstChild) mountRef.current.removeChild(renderer.domElement);
 renderer.dispose();
 };
-}, [song.id, JSON.stringify(song.genres)]);
-
-// Plug in reactivity: replace freqArray if mp3 is available
-// Support audio source in the future...
+}, [song.id, JSON.stringify(song.genres), visualMode]);
 
 return (
 <VisualWrapper>
