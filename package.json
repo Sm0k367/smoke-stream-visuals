@@ -1,0 +1,34 @@
+{
+"name": "epic-tech-ai-visuals",
+"version": "1.0.0",
+"description": "Epic Tech AI — A Suno-powered, Three.js-visualized music gallery. Every song gets a unique visual experience. Built with Next.js for the Epic Tech AI community.",
+"scripts": {
+"dev": "next dev",
+"build": "next build",
+"start": "next start",
+"lint": "next lint"
+},
+"dependencies": {
+"next": "^14.2.0",
+"react": "^18.2.0",
+"react-dom": "^18.2.0",
+"styled-components": "^6.1.0",
+"three": "^0.158.0"
+},
+"devDependencies": {
+"eslint": "^8.56.0",
+"eslint-config-next": "14.2.0"
+},
+"keywords": [
+"epic tech ai",
+"music",
+"visualizer",
+"threejs",
+"suno",
+"nextjs",
+"react"
+],
+"author": "Epic Tech AI (DJ Smoke Stream) / SmokeStream AI",
+"license": "MIT",
+"repository": "https://github.com/Sm0k367/smoke-stream-visuals"
+}
