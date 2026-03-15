@@ -1,0 +1,23 @@
+{
+"name": "epic-tech-ai-visuals",
+"version": "1.0.0",
+"description": "Epic Tech AI — Next.js + Three.js music visualizer for AI audio, Suno, and live open mic remix.",
+"scripts": {
+"dev": "next dev",
+"build": "next build",
+"start": "next start"
+},
+"dependencies": {
+"next": "^14.2.0",
+"react": "^18.2.0",
+"react-dom": "^18.2.0",
+"styled-components": "^6.1.0",
+"three": "^0.158.0"
+},
+"author": "Epic Tech AI (DJ Smoke Stream) / SmokeStream AI",
+"license": "MIT",
+"repository": {
+"type": "git",
+"url": "https://github.com/Sm0k367/smoke-stream-visuals"
+}
+}
