@@ -25,6 +25,11 @@ opacity: 0.75;
 margin-left: 8px;
 `;
 
+function getUniqueKey(song, idx) {
+// Always unique: prioritize id, then fallback to title, then to array index
+return `${song.id || ""}-${song.title || ""}-${idx}`;
+}
+
 export default function SongSelector({ songs, selected, onSelect }) {
 return (
 <Row>
@@ -32,11 +37,11 @@ return (
 value={selected.id}
 onChange={e => {
 const song = songs.find(s => s.id === e.target.value);
-onSelect(song);
+onSelect(song || songs[0]);
 }}
 >
-{songs.map(song => (
-<option key={song.id} value={song.id}>
+{songs.map((song, idx) => (
+<option key={getUniqueKey(song, idx)} value={song.id}>
 {song.title}
 </option>
 ))}
