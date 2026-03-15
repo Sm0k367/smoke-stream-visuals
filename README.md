@@ -90,4 +90,4 @@ Want to automate Suno scraping? Build/PR your scripts!
 Made for DJ Smoke Stream, by Epic Tech AI
 If you copy our style, at least bring better visuals.
 
-<div align="center"> <img src="https://media.giphy.com/media/l41lI4bYmcsPJX9Go/giphy.gif" width="180" /><br> <i>Your playlist. Your visuals. Your rules.</i> </div> ```
+<div align="center"> <img src="https://media.giphy.com/media/l41lI4bYmcsPJX9Go/giphy.gif" width="180" /><br> <i>Your playlist. Your visuals. Your rules.</i> </div>
