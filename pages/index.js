@@ -201,31 +201,32 @@ const files = [
 "turntablism_set.mp3"
 ];
 
-// Visualizer
+// Visualizer with safe context/node handling
 function AudioVisualizer({ audioRef, isPlaying }) {
 const [dataArray, setDataArray] = useState(new Array(32).fill(0));
 const rafId = useRef();
+const audioCtxRef = useRef();
 const analyserRef = useRef();
+const sourceRef = useRef();
 
 useEffect(() => {
 if (!audioRef.current) return;
 
-let audioCtx;
-let analyser;
-let source;
-let stopped = false;
-
-const setup = async () => {
-audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-analyser = audioCtx.createAnalyser();
+// Only set up once per audio element
+if (!audioCtxRef.current) {
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const analyser = audioCtx.createAnalyser();
 analyser.fftSize = 64;
-source = audioCtx.createMediaElementSource(audioRef.current);
+const source = audioCtx.createMediaElementSource(audioRef.current);
 source.connect(analyser);
 analyser.connect(audioCtx.destination);
-analyserRef.current = analyser;
-};
 
-setup();
+audioCtxRef.current = audioCtx;
+analyserRef.current = analyser;
+sourceRef.current = source;
+}
+
+let stopped = false;
 
 const update = () => {
 if (!analyserRef.current) return;
@@ -237,14 +238,13 @@ if (!stopped) rafId.current = requestAnimationFrame(update);
 };
 
 if (isPlaying) {
-audioCtx.resume && audioCtx.resume();
+audioCtxRef.current.resume && audioCtxRef.current.resume();
 update();
 }
 
 return () => {
 stopped = true;
 if (rafId.current) cancelAnimationFrame(rafId.current);
-if (audioCtx) audioCtx.close();
 };
 // eslint-disable-next-line
 }, [audioRef, isPlaying]);
