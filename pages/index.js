@@ -101,12 +101,88 @@ background: #181d1d;
 box-shadow: 0 2px 27px #2b7fff33;
 `;
 
+const VisualizerContainer = styled.div`
+width: 100%;
+height: 64px;
+margin: 10px 0 18px 0;
+display: flex;
+align-items: flex-end;
+justify-content: center;
+gap: 3px;
+background: transparent;
+`;
+
+const Bar = styled.div`
+width: 8px;
+border-radius: 4px 4px 10px 10px;
+background: linear-gradient(180deg, #64ffda 10%, #2b7fff 90%);
+box-shadow: 0 0 7px #64ffda88;
+transition: height 0.13s cubic-bezier(0.55,0,0.1,1);
+`;
+
 const files = [
 "240.mp3",
 "A Musical Journey (Stereo FX Club Mix).mp3",
-// ... (leave the full mp3 list here just as before)
+// ... (insert your full mp3 list here)
 "turntablism_set.mp3"
 ];
+
+// Audio Visualizer using Web Audio API
+function AudioVisualizer({ audioRef, isPlaying }) {
+const [dataArray, setDataArray] = useState(new Array(32).fill(0));
+const rafId = useRef();
+const analyserRef = useRef();
+
+useEffect(() => {
+if (!audioRef.current) return;
+
+let audioCtx;
+let analyser;
+let source;
+let stopped = false;
+
+const setup = async () => {
+audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+analyser = audioCtx.createAnalyser();
+analyser.fftSize = 64;
+source = audioCtx.createMediaElementSource(audioRef.current);
+source.connect(analyser);
+analyser.connect(audioCtx.destination);
+analyserRef.current = analyser;
+};
+
+setup();
+
+const update = () => {
+if (!analyserRef.current) return;
+const bufferLength = analyserRef.current.frequencyBinCount;
+const data = new Uint8Array(bufferLength);
+analyserRef.current.getByteFrequencyData(data);
+setDataArray(Array.from(data));
+if (!stopped) rafId.current = requestAnimationFrame(update);
+};
+
+if (isPlaying) {
+audioCtx.resume && audioCtx.resume();
+update();
+}
+
+return () => {
+stopped = true;
+if (rafId.current) cancelAnimationFrame(rafId.current);
+if (audioCtx) audioCtx.close();
+};
+// eslint-disable-next-line
+}, [audioRef, isPlaying]);
+
+return (
+<VisualizerContainer>
+{dataArray.slice(0, 32).map((v, i) => (
+<Bar key={i} style={{ height: `${12 + v / 1.7}px` }} />
+))}
+</VisualizerContainer>
+);
+}
 
 export default function Home() {
 const [selected, setSelected] = useState(files[0]);
@@ -155,6 +231,7 @@ active={selected === name}
 {selected.replace(/\.mp3$/, "")}
 </span>
 </NowPlaying>
+<AudioVisualizer audioRef={audioRef} isPlaying={playing} />
 <AudioPlayer
 ref={audioRef}
 controls
